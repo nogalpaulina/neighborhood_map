@@ -1,0 +1,33 @@
+html, body, #map-canvas { 
+	height: 100%; 
+	margin: 0; 
+	padding: 0;
+}
+
+#search-bar {
+	position: absolute;
+	top: 20px;
+	left: 100px;
+	z-index: 1;
+}
+
+input[type="text"] {
+	width: 400px;
+	height: 20px;
+	background-color: #000;
+	opacity: 0.5;
+	color: #fff;
+}
+
+#side-bar {
+	position: absolute;
+	top: 30px;
+	right: 10px;
+	z-index: 2;
+	width: 250px;
+	height: 600px;
+	background-color: #000;
+	opacity: 0.5;
+	overflow: hidden;
+	color: #fff;
+}
