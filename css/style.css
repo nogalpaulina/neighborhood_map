@@ -2,6 +2,7 @@ html, body, #map-canvas {
 	height: 100%; 
 	margin: 0; 
 	padding: 0;
+	font-size: 18px;
 }
 
 #search-bar {
@@ -12,14 +13,39 @@ html, body, #map-canvas {
 }
 
 input[type="text"] {
+	font-size: 18px;
 	width: 400px;
-	height: 20px;
+	height: 25px;
 	background-color: #000;
 	opacity: 0.5;
 	color: #fff;
+	padding: 8px;
+	border-radius: 5px;
 }
 
-#side-bar {
+#search {
+	font-weight: 900;
+	text-align: center;
+	display: inline-block;
+ 	width: 200px;
+	line-height: 25px;
+	padding: 8px;
+	color: #fff;
+	background-color: #000;
+	opacity: 0.5;
+	border-radius: 5px;
+	transition: background-color 0.3s #F75850,
+		border 0.3s 2px solid #F75850;
+}
+
+#search:hover,
+#search:active {
+	background-color: #F75850;
+	border: 2px solid #F75850;
+}
+
+#sidebar {
+	border-radius: 5px;
 	position: absolute;
 	top: 30px;
 	right: 10px;
@@ -30,4 +56,10 @@ input[type="text"] {
 	opacity: 0.5;
 	overflow: hidden;
 	color: #fff;
+	padding: 8px;
+}
+
+h5:hover {
+	color: blue;
+	cursor: pointer;
 }
