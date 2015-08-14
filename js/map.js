@@ -1,60 +1,71 @@
+/* Neighborhood map application
+ * Created by Paulina Nogal
+ */
+
 function initialize() {
+	// Searching with an empty string returns popular points of interest
+	Model.getYelpLocations('');
+	// Initialize map
 	Map.initialize();
-	Map.addMarkers(Model.locations);
 };
 
 var Model = {
-	locations: [{
-		'title': 'Fort Adams',
-		'latLng': [41.4743827, -71.3428249],
-		'description': 'Park on the site of a 19th-century fort, with sailing, swimming & the Newport jazz & folk festivals'
-	}, {
-		'title': 'The Breakers',
-		'latLng': [41.4692745, -71.2977931],
-		'description': 'The Breakers is the grandest of Newport\'s summer \"cottages\" and a symbol of the Vanderbilt family\'s social and financial preeminence in turn of the century America.'
-	}, {
-		'title': 'The Elms',
-		'latLng': [41.4777992, -71.3089636],
-		'description': 'The Elms was the summer residence of Mr. and Mrs. Edward Julius Berwind of Philadelphia and New York. Mr. Berwind made his fortune in the coal industry.'
-	}, {
-		'title': 'Rosecliff',
-		'latLng': [41.464745, -71.3052973],
-		'description': 'Commissioned by Nevada silver heiress Theresa Fair Oelrichs in 1899, architect Stanford White modeled Rosecliff after the Grand Trianon, the garden retreat of French kings at Versailles.'
-	}, {
-		'title': 'Marble House',
-		'latLng': [41.4620825, -71.3048545],
-		'description': 'Marble House was built between 1888 and 1892 for Mr. and Mrs. William K. Vanderbilt.  It was a summer house, or cottage, as Newporters called them in remembrance of the modest houses of the early 19th century.'
-	}, {
-		'title': 'Internationl Tennis Hall of Fame and Museum',
-		'latLng': [41.4823553, -71.3079833],
-		'description': 'As part of the global tennis community the International Tennis Hall of Fame is committed to preserving tennis history, celebrating its champions, and educating and inspiring a worldwide audience.'
-	}, {
-		'title': 'King Park',
-		'latLng': [41.4770937, -71.3180953],
-		'description': 'Grassy space on Newport Harbor with a gazebo, a boat ramp & a monument of French General Rochambeau.'
-	}, {
-		'title': 'Ocean Drive Historic District',
-		'latLng': [41.4546443, -71.3350707],
-		'description': ' In the late 1800s many wealthy New Yorkers escaped to Newport on "Rhode Island" during hot summers. As Newport became more popular and easier to reach with a passenger steamship route the southern end of Newport...'
-	}, {
-		'title': 'Cliff Walk',
-		'latLng': [41.4850926, -71.2976432],
-		'description': 'The Cliff Walk along the eastern shore of Newport, RI is world famous as a public access walk that combines the natural beauty of the Newportshoreline with the architectural history of Newport\'s gilded age. Wildflowers, birds, geology ... all add to this delightful walk.'
-	}]
+	getYelpLocations: function(term) {
+		var yelpURL = 'http://api.yelp.com/business_review_search?lat=41.48611&long=-71.3247682&term=' + term + '&radius=3&num_biz_requested=11&ywsid=glDt6TNTp1kRn1fL055uNQ&callback=?';
+		var that = this;
+		$.ajax({
+			url: yelpURL, 
+			async: false,
+			dataType: "jsonp",
+			success: function(response) {
+				if (response.businesses.length > 0) {  
+					for (i = 0; i < response.businesses.length; i++) {
+						// Build a location object
+						var location = {};
+						var business = response.businesses[i];
+			    			location.title = business.name;
+			    			var address = business.address1 + " " + business.city + ", " + business.state;
+			    			location.description = address;
+			    			addYelpMarker(location);
+			    		}  
+				} else {
+					ViewModel.sidebarList('<h4>No results found</h4>');
+				}
+			}
+		});		
+	}
 };
+
+function addYelpMarker(location) {
+	// Convert the location's address to lat and long for map marker
+	var geocoder = new google.maps.Geocoder();
+	geocoder.geocode( { 'address': location.description}, function(results, status) {
+		if (status === google.maps.GeocoderStatus.OK) {
+			var position = results[0].geometry.location;
+			location.latLng = [position.G, position.K];
+			Map.addMarkers([location]);
+		} else if (status === google.maps.GeocoderStatus.OVER_QUERY_LIMIT) { 
+			// Fail silently if the location can't be converted
+		}
+	});
+}
 
 // Set up knockout bindings
 var ViewModel = {
 	sidebarList: ko.observable(),
 	searchTerm: ko.observable(),
 	searchButton: function() {
-		// Filter out the locations that don't match the user input
-		self = this;
-		var searchLocations = Model.locations.filter(function(location) {
-			return location.title.toLowerCase().indexOf(self.searchTerm().toLowerCase()) > -1 ||
-				location.description.toLowerCase().indexOf(self.searchTerm().toLowerCase()) > -1;
-		});
-		Map.addMarkers(searchLocations);
+		var self = this;
+		// Remove existing markers from the map
+		Map.removeMarkers();
+		// Clear sidebar list
+		this.clearSidebar();
+		// Get locations based on search term
+		Model.getYelpLocations(self.searchTerm());
+	},
+	clearSidebar: function() {
+		this.sidebarList('');
+		Map.sidebarList = '';
 	}
 };
 
@@ -75,6 +86,10 @@ var Map = {
 		};
 		this.map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
 		this.markers = [];
+		this.sidebarList = "";
+		this.defaultIcon = 'img/black-marker.png';
+		this.activeIcon = 'img/yellow-marker.png';
+		this.infoWindow = new google.maps.InfoWindow();
 		// Override our map zoom level once our fitBounds function runs (Make sure it only runs once)
 		var boundsListener = google.maps.event.addListener((this.map), 'bounds_changed', function(event) {
 			this.setZoom(14);
@@ -83,48 +98,52 @@ var Map = {
 	},
 
 	addMarkers: function(locations) {
-		// Remove existing markers (if any)
-		this.removeMarkers();
 		var bounds = new google.maps.LatLngBounds();
-		// Automatically center the map fitting all markers on the screen
-		// TODO: figure out this bounds stuff
-		// this.map.fitBounds(bounds);
 		// Loop through our array of markers & place each one on the map  
-		var sidebarList = "";
 		for (i = 0; i < locations.length; i++) {
 			var position = new google.maps.LatLng(locations[i].latLng[0], locations[i].latLng[1]);
 			bounds.extend(position);
 			marker = new google.maps.Marker({
-				animation: google.maps.Animation.DROP,
+				icon: this.defaultIcon,
+				animation: google.maps.Animation.BOUNCE,
 				position: position,
 				map: this.map,
 				title: locations[i].title
 			});
+			setTimeout(function() {
+				marker.setAnimation(null)
+			}, 750);
 			this.markers.push(marker);
-			sidebarList += "<h5 onclick='Map.clickMarker(" + (this.markers.length - 1) + ");'>" + locations[i].title + "</h5>";
+			this.sidebarList += "<h5 onclick='Map.clickMarker(" + (this.markers.length - 1) + ");'>" + locations[i].title + "</h5>";
 			// Display multiple markers on a map
-			var infoWindow = new google.maps.InfoWindow(),
-				marker, i;
+			var marker, i;
 
 			// Allow each marker to have an info window
-			google.maps.event.addListener(marker, 'click', (function(marker, location) {
+			google.maps.event.addListener(marker, 'click', (function(marker, location, that) {
 				return function() {
+					for (var i=0; i<that.markers.length; i++) {
+                   				that.markers[i].setIcon(that.defaultIcon);
+                			}
+					marker.setIcon(that.activeIcon);
+					that.infoWindow.close();
+					this.map.panTo(marker.getPosition());
 					marker.setAnimation(google.maps.Animation.BOUNCE);
 					setTimeout(function() {
 						marker.setAnimation(null)
-					}, 700);
-					infoWindow.setContent(infoWindowContent(location.title, location.description));
-					infoWindow.open(this.map, marker);
+					}, 750);
+					that.infoWindow.setContent(infoWindowContent(location.title, location.description));
+					that.infoWindow.open(this.map, marker);
 				}
-			})(marker, locations[i]));
+			})(marker, locations[i], this));
 		}
-		ViewModel.sidebarList(sidebarList);
+		ViewModel.sidebarList(this.sidebarList);
 
 		// Info Window Content
 		var infoWindowContent = function(title, description) {
 			return '<div class="info_content">' +
 				'<h3>' + title + '</h3>' +
-				'<p>' + description + '</p>' + '</div>';
+				'<p>' + description + '</p>' + 
+				'</div>';
 		};
 	},
 	clickMarker: function(id) {
@@ -137,3 +156,13 @@ var Map = {
 		this.markers = [];
 	}
 }
+
+$('#input').keyup(function(e) {
+	if(e.which == 13) { // Enter key pressed
+		$('#search').click(); // Trigger search button click event
+	}
+});
+
+$("#eye-button").click(function() {
+	$("#sidebar").toggle(1000, "swing");
+});
