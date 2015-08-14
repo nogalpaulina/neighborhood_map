@@ -10,4 +10,4 @@ You can click on the markers displayed on the map to see the name and address of
 Places will be listed below the Search button.
 
 #### To open the project ####
-Follow the link:
+Follow the link: [http://paulinanogal.com/neighborhood_map/]( http://paulinanogal.com/neighborhood_map/)
