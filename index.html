@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Newport's Neigborhood</title>
+	<link href='http://fonts.googleapis.com/css?family=Julius+Sans+One' rel='stylesheet'>
+	<link href='http://fonts.googleapis.com/css?family=Quicksand' rel='stylesheet'>
+	<link href="css/style.css" rel="stylesheet">
+	<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBlf8YVIh2OBqbP9p1a4Cm9-ksGAfKEDcw"></script>
+</head>
+<body>
+	<div  id="sidebar">
+		<div class="header">
+			<h3>Your points of interest</h3>
+			<div class="input-group">
+				<input id="input" type="text" name="search" data-bind="value: searchTerm" placeholder="Search...">
+				<span id="search" data-bind="click: searchButton">Search</button>
+			</div>
+		</div>
+		<div class="content" data-bind="html: sidebarList"></div>
+	</div>
+	<div id="toggle-button">
+		<img id="eye-button" src="img/eye.png" alt="eye button">
+	</div>
+	<div id="map-canvas"></div>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+	<script src="js/knockout.js"></script>
+	<script src="js/map.js"></script>
+</body>
+</html>
