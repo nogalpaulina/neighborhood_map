@@ -1,4 +1,4 @@
-#### Udacity Neighborhood Map: Project 5 ####
+#### Points of interest map for Newport, RI ####
 Created by Paulina Nogal
 
 #### Description ####
